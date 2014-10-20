@@ -1,0 +1,62 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Mac & Win
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*Thumbs.db
+
+# etc
+*.html
+*.h
+
+*.cpp
+
+*.txt
+
+*.gch
+
+*.xml
+
+bin/hx/obj/darwin/all_objs
+
+bin/hx/Main
+
+haxelibtest
+bin/hx.lua
+bin
+bin/hx.js
+
+bin/hx.js
+
+bin/hx.lua
+
+demo/extra/hx.lua
+demo/extra/dump
+dump
+
+ast.json
