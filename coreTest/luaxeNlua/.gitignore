@@ -60,3 +60,7 @@ demo/extra/dump
 dump
 
 ast.json
+
+*.sublime-workspace
+
+build.hxml

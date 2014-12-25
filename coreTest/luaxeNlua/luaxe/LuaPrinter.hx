@@ -123,10 +123,19 @@ class LuaPrinter {
 
 	public function printString(s:String) {
 		lastConstIsString = true;
-		return '"' + s.split("\n").join("\\n").split("\t").join("\\t").split("'").join("\\'").split('"').join("\\\"") #if sys .split("\x00").join("\\x00") #end + '"';
+		return '"' +
+		s
+		.split("\\").join("\\\\")
+		.split("\n").join("\\n")
+		.split("\t").join("\\t")
+		.split("\r").join("\\r")
+		.split("'").join("\\'")
+		.split('"').join("\\\"")
+		#if sys .split("\x00").join("\\x00") #end +
+		'"';
 	}
 
-	public function printConstant(c){
+	public function printConstant(c:TConstant){
 		lastConstIsString = false;
 		return switch(c) {
 			case TString(s): printString(s);
@@ -136,7 +145,7 @@ class LuaPrinter {
 			case TBool(false): "false";
 			case TInt(s): ""+s;
 			case TFloat(s): s;
-			case TSuper: "super";
+			case TSuper: throw "Unreachable code";
 		}
 	}
 
@@ -167,27 +176,31 @@ class LuaPrinter {
 		var head = printFunctionHead;
 		printFunctionHead = true;
 		// TODO avoid printing function head in other functions inside of constructor
-		
+
 		var body:String = (head?"function":"") + "(" + printArgs(func.args) + ")";
 
 		var returnSelf = true;
 
 		var _tabs = tabs;
 		tabs += tabString;
-		
+
 		if(insideConstructor != null)
 		{
 			body += '\n${tabs}local self = setmetatable({ }, $insideConstructor)';
+			insideConstructor = null;
 		} else returnSelf = false;
-		
+
 		switch (func.expr.expr) {
-			case TBlock(el) if (el.length == 0): 
-			if (returnSelf) body += '\n${tabs}return self\n\tend';
-			else body += ' end';
-			case _:
-				body += opt(func.expr, printExpr, '\n${tabs}');
+			case TBlock([]):
+				if (returnSelf) body += '\n${tabs}return self\n\tend';
+				else body += ' end';
+
+			case TBlock(el):
+				body += '\n${tabs}' + print_TBlock(el);
 				if (returnSelf) body += '\n${tabs}return self';
 				body += '\n${_tabs}end';
+
+			case _: throw "Unreachable code";
 		}
 
 		tabs = _tabs;
@@ -203,14 +216,14 @@ class LuaPrinter {
 	function printField(e1:TypedExpr, fa:FieldAccess, isAssign:Bool = false)
 	{
 		var obj = switch (e1.expr) {
-			case TConst(TSuper): "super()";
+			case TConst(TSuper): '$superClass.super';
 			case _: '${printExpr(e1)}';
 		}
 
 		var closure = false;
 
 		var name = switch (fa) {
-			case FInstance(_, cf): 
+			case FInstance(_, cf):
 			var n = cf.get().name;
 
 			if(n == "length")
@@ -222,9 +235,9 @@ class LuaPrinter {
 			}
 
 			switch( e1.expr )
-			{        	
-				case TLocal( v ) if( ""+v.t == "TInst(String,[])" ): 
-				
+			{
+				case TLocal( v ) if( ""+v.t == "TInst(String,[])" ):
+
 				return
 					(switch( n )
 					{
@@ -232,11 +245,12 @@ class LuaPrinter {
 						case _: obj + "." + n;
 					});
 
-				case _: 
+
+				case _:
 					switch (cf.get().kind) {
 						case FMethod(_): (isAssign? "." : ":") + n;
 						case _ :"." + n;
-					}	
+					}
 			};
 
 			case FStatic(_,cf): "." + cf.get().name;
@@ -256,10 +270,10 @@ class LuaPrinter {
 		{
 			//return printExprs(el,", ");
 			var out = "";
-			for(i in el) 
+			for(i in el)
 			{
 				out += (out.length > 0?", ":"") + switch (i.expr) {
-					case TBlock(el) if (el.length > 1): 
+					case TBlock(el) if (el.length > 1):
 
 						var result = new StringBuf();
 						var sep = ';\n$tabs\t\t';
@@ -270,19 +284,17 @@ class LuaPrinter {
 							var ex = el[i];
 							result .add( switch(ex.expr)
 							{
-								case TUnop(OpIncrement, _, e): 
+								case TUnop(OpIncrement, _, e):
 								var v = printExpr(e);
 								'$v = $v + 1';
-								
-								case TUnop(OpDecrement, _, e): 
+
+								case TUnop(OpDecrement, _, e):
 								var v = printExpr(e);
 								'$v = $v - 1';
 
-								
-
 								case _: printExpr(ex);
 							} );
-							//if(i < el.length - 1) 
+							//if(i < el.length - 1)
 							result .add( sep );
 						}
 
@@ -295,7 +307,7 @@ class LuaPrinter {
 						result.add("end)(self)");
 						result.toString();
 
-					case TIf(econd, eif, eelse): 
+					case TIf(econd, eif, eelse):
 					switch (eif.expr) {
 						case TConst(TInt(z)): '(${printExpr(econd)} and ${z} or (${printExpr(eelse)}))';
 						case TConst(TBool(z)): '(${printExpr(econd)} and ${z} or (${printExpr(eelse)}))';
@@ -311,7 +323,24 @@ class LuaPrinter {
 			return out;
 		}
 
-		var id = printExpr(e1);
+		var id;
+
+		switch [e1.expr, e1.t] {
+			case [TConst(TSuper), TInst(inst, _)]:
+				var args = toFuncIf();
+				return
+				LuaGenerator.getPath(inst.get()).replace(".","_") +
+				".super(self" + (args != ""? ", " + toFuncIf():"") + ")";
+
+			case [TField(ee = { expr: TConst(TSuper) }, FInstance(inst, func)), _]:
+				var args = toFuncIf();
+				return
+				LuaGenerator.getPath(inst.get()).replace(".","_") +
+				"." + func + "(self" + (args != ""? ", " + toFuncIf():"") + ")";
+
+			case _ :
+				id = printExpr(e1);
+		}
 
 		var result =  switch(id)
 		{
@@ -327,7 +356,7 @@ class LuaPrinter {
 				func = func.substring(1,func.length-1);
 				'${func}(${printExprs(el,", ")})';
 			case "__tail__":
-				'${printExpr(el.shift())}:${printExpr(el.shift())}(${printExprs(el,", ")})';    
+				'${printExpr(el.shift())}:${printExpr(el.shift())}(${printExprs(el,", ")})';
 			case "__global__":
 				'_G.${printExpr(el.shift())}(${printExprs(el,", ")})';
 			default:
@@ -369,16 +398,11 @@ class LuaPrinter {
 
 				//var r = '${_static?id : id.replace(".",":")}(${printExprs(el,", ")})';
 				var r = '${_static?id : id.replace(".",":")}(${toFuncIf()})';
-				
+
 				if(_static && id.indexOf(".") == -1) r = currentPath + r;
 				return r.replace(":new(", ".new(");
 			})();
 		}
-
-		// TODO fix super calls in non-constuctors, and pointing to another funcs
-		// TODO inline inheritance
-		if(result.startsWith("super("))
-			result = '\t\t___inherit(self, ${superClass.replace(".", "_")}.new(${toFuncIf()}))';
 
 		return result;
 	}
@@ -422,22 +446,47 @@ class LuaPrinter {
 
 		traceString = traceStringParts.join(" + ");
 
+		#if unity
+		
+		return 'Debug.Log($traceString)';
+		 
+		 #end
 		return '_G.print("$posInfo " + ($traceString))';
 	}
 
 	function printBaseType(tp:BaseType):String
 	{
-		if(tp.isExtern == true && tp.meta.has("dotpath"))
+		
+		
+		
+		#if unity
+		     if (tp.isExtern == true ) {
+				 return tp.name;
+			 }else {
+				return  (tp.module.length > 0 ? tp.module.replace(".", "_") + "_" : "") + tp.name;
+			 }
+		#end
+		
+	
+		if (tp.isExtern == true && tp.meta.has("dotpath"))
 		{
+			
 			return (tp.pack.length > 0 ? tp.pack.join(".") + "." : "") + tp.name;
 		} else
 		return (tp.module.length > 0 ? tp.module.replace(".", "_") + "_" : "") + tp.name;
+		
+		
+		
+		
 	}
 
-	public function printModuleType (t:ModuleType) 
+	public function printModuleType (t:ModuleType)
 	{
-		return switch (t) 
+		
+	
+		return switch (t)
 		{
+			
 			case TClassDecl(ct): printBaseType(ct.get());
 			case TEnumDecl(ct): printBaseType(ct.get());
 			case TTypeDecl(ct): printBaseType(ct.get());
@@ -447,8 +496,17 @@ class LuaPrinter {
 
 	public function printMetadata(meta) return "";
 
-	function printIfElse(econd:TypedExpr, eif:TypedExpr, eelse:TypedExpr)
+	function printIfElse(econd:TypedExpr, eif:TypedExpr, eelse:TypedExpr, insideCall:Bool = false)
 	{
+		if(_insideCall) // TODO rename
+		return
+		'(function()
+			if (${printExpr(econd)}) then
+				return ${printExpr(eif)}
+			else
+				return ${printExpr(eelse)}
+			end
+		end)()';
 		// eliminate: if(x){} and if(x){}else{} etc
 		var _tabs = tabs; tabs += tabString;
 		var _cond:String, _then:String, _else:String, _type:Int;
@@ -490,15 +548,13 @@ class LuaPrinter {
 		tabs = _tabs;
 		return s;
 	}
-	
+
 	var _continueLabel = false; // <-- not perfect, TODO improve
 	var _insideCall = false;
 
-	public function printExpr(e:TypedExpr){        
-		//if((""+e).indexOf("hasNext") > -1) trace(""+e);
-
+	public function printExpr(e:TypedExpr)
 		return e == null ? null : switch(e.expr) {
-		
+
 		case TConst(c): printConstant(c);
 
 		case TLocal(t): handleKeywords(t.name).replace("`trace", "trace");
@@ -517,7 +573,7 @@ class LuaPrinter {
 					var add = switch (fld.expr.expr) {
 						case TFunction(
 						 func): add = "--[[function]] ";
-						default: "";   
+						default: "";
 					}
 					return
 					fld.name +
@@ -534,16 +590,22 @@ class LuaPrinter {
 		case TTypeExpr(t): printModuleType(t);
 
 		case TCall(e1 = { expr : TField(_,FStatic (_))}, el): printCall(e1, el, true);
-		
+
 		// fix for untyped __lua__
 		case TCall(e1 = { expr : TCall({ expr : TLocal(tc) },_)}, el)
 		if(tc.name == "__lua__"): printCall(e1, el, true);
 
 		case TCall(e1, el): printCall(e1, el);
-		
-		case TNew(tp, _, el): 
+
+		case TNew(tp, _, el):
 			var id:String = printBaseType(tp.get());
-			'${id}.new(${printExprs(el,", ")})';
+			
+			 if (tp.get().isExtern == true) {
+				 '${id}(${printExprs(el,", ")})';
+			 }else {
+				 '${id}.new(${printExprs(el,", ")})';
+			 }
+			
 
 		case TBinop(OpXor, e1, e2):
 		{
@@ -589,13 +651,13 @@ class LuaPrinter {
 			}
 		};
 
-		case TBinop(op, e1, e2): 
+		case TBinop(op, e1, e2):
 			'${printExpr(e1)} ${printBinop(op)} ${printExpr(e2)}';
-		
+
 		case TUnop(OpNegBits, false, e1): 'bit.bnot(${printExpr(e1)})';
 		case TUnop(op, true, e1): printUnop(op,printExpr(e1),true);
 		case TUnop(op, false, e1): printUnop(op,printExpr(e1),false);
-		
+
 		case TFunction(func): printFunction(func);
 
 		case TFor(v, e1, e2):
@@ -606,7 +668,7 @@ class LuaPrinter {
 		end';
 
 		case TVar(v,e)
-		if(""+v.t == "TAbstract(Int,[])" && e != null): 
+		if(""+v.t == "TAbstract(Int,[])" && e != null):
 		var result = "local " + printVar(v, e);
 		switch (e.expr) {
 			case TUnop(OpIncrement,true,{ expr : TLocal(tc)}):
@@ -620,11 +682,12 @@ class LuaPrinter {
 		result;
 
 		case TVar(v,e): "local " + printVar(v, e);
-		
+
 		case TBlock([]): '';
 		case TBlock(el) if (el.length == 1): printShortFunction(printExprs(el, ';\n$tabs'));
 		case TBlock(el): //printExprs(el, ';\n$tabs');
-				var sep = ';\n$tabs';
+			print_TBlock(el);
+				/*var sep = ';\n$tabs';
 				var result = new StringBuf();
 				for(i in 0...el.length)
 				{
@@ -638,59 +701,61 @@ class LuaPrinter {
 						case TConst(TNull): '-- nil';
 						case TLocal(z): '-- ${z.name}';
 
-						case TUnop(OpIncrement, _, e): 
+						case TUnop(OpIncrement, _, e):
 						var v = printExpr(e);
 						'$v = $v + 1';
-						case TUnop(OpDecrement, _, e): 
+						case TUnop(OpDecrement, _, e):
 						var v = printExpr(e);
 						'$v = $v - 1';
 						case _: printExpr(ex);
 					} );
 					if(i < el.length - 1) result .add( sep );
 				}
-				result.toString();
-		
-		case TIf(econd, eif, eelse): printIfElse(econd, eif, eelse);
-		
-		case TWhile(econd, e1, true): 
+				result.toString();*/
+
+		case TIf(econd, eif, eelse): print_TIf_Ternar(econd, eif, eelse);
+
+		case TWhile(econd, e1, true):
 			var _tabs = tabs; tabs += tabString;
 			var _cond = 'while ${printExpr(econd)} do';
-			_continueLabel = true; // <-- buggy for now
+			var oldContLbl = _continueLabel;
 			var _state = '\n${tabs}${printExpr(e1)}\n${_tabs}end';
 			tabs = _tabs;
-			_cond + (_continueLabel ? " ::continue::" : "") + _state;
+			if(_continueLabel) _cond += " ::continue::";
+			_continueLabel = oldContLbl;
+			_cond + _state;
 
-		case TWhile(econd, e1, false): 
+		case TWhile(econd, e1, false):
 			var _tabs = tabs; tabs += tabString;
-			_continueLabel = true; // <-- buggy for now
+			var oldContLbl = _continueLabel;
 			var s = 'repeat\n${tabs}${printExpr(e1)}';
 			if (_continueLabel) s += '\n${tabs}::continue::';
+			_continueLabel = oldContLbl;
 			s += '\n${_tabs}until not ${printExpr(econd)}';
 			tabs = _tabs;
 			s;
-		
+
 		case TSwitch(e, cases, edef):  printSwitch(e, cases, edef);
 
 		case TReturn(eo): "return" + opt(eo, printExpr, " ");
 
 		case TBreak: "break";
-		case TContinue: 
+		case TContinue:
 			_continueLabel = true;
 			"goto continue";
-		
-		case TThrow(e1): "error(" + printExpr(e1) + ")";
-		
-		case TCast(e1, _): printExpr(e1);
-		
-		case TMeta(meta, e1): printMetadata(meta) + " " +printExpr(e1);
 
-		case TPatMatch: "" + e; // TODO WTF
+		case TThrow(e1): "error(" + printExpr(e1) + ")";
+
+		case TCast(e1, _): printExpr(e1);
+
+		case TMeta(meta, e1): printMetadata(meta) + " " +printExpr(e1);
 
 		case TTry(e1, catches): printTry(e1, catches);
 
 		case TEnumParameter( e1 /*: haxe.macro.TypedExpr */, ef /*: haxe.macro.EnumField*/ , index /*: Int */): "" + printExpr(e1) + '[$index]';
+
+		case _: throw ("Unsupported language feature: " + e);
 	};
-	}
 
 	inline function printShortFunction(value:String)
 	{
@@ -703,7 +768,7 @@ class LuaPrinter {
 		// TODO catch other types of exceptions
 		// getting last (e:Dynamic) catch:
 		var _dynCatch = catches.pop(), _tabs;
-		
+
 		// try-block:
 		var s = 'local try, catch = pcall(function ()';
 			_tabs = tabs; tabs += tabString;
@@ -725,7 +790,7 @@ class LuaPrinter {
 			}
 			tabs = _tabs;
 		s += '\n${tabs}end);--';
-		
+
 		// catch-block:
 		if (_dynCatch.expr != null) switch (_dynCatch.expr.expr) {
 		case TBlock([]): // empty catch-block
@@ -747,7 +812,7 @@ class LuaPrinter {
 				} else s += 'else return catch end';
 			} else s += 'end';
 		}
- 
+
 		return s;
 	}
 
@@ -759,7 +824,7 @@ class LuaPrinter {
 		default: e = printExpr(_e);
 		}
 		var _tabs = tabs; tabs += tabString;
-		
+
 		// print case blocks:
 		for (i in 0 ... cases.length) {
 			var c = cases[i];
@@ -767,13 +832,13 @@ class LuaPrinter {
 				+ ' ($e == ' + printExprs(c.values, ' or $e == ') + ') then'
 				+ '\n${tabs}' + opt(c.expr, printExpr) );
 		}
-		
+
 		// print "default" block, if any:
 		if (edef != null) {
 			s .add( '\n${_tabs}else'
 				+ '\n${tabs}' + opt(edef, printExpr) );
 		}
-		
+
 		//
 		s .add( '\n${_tabs}end' );
 		tabs = _tabs;
@@ -787,15 +852,66 @@ class LuaPrinter {
 			var ex = el[i];
 			result .add( switch(ex.expr)
 			{
-				case TUnop(OpIncrement, _, e): 
+				case TUnop(OpIncrement, _, e):
 				var v = printExpr(e);
 				'$v = $v + 1';
-				case TUnop(OpDecrement, _, e): 
+				case TUnop(OpDecrement, _, e):
 				var v = printExpr(e);
 				'$v = $v - 1';
 				case _: printExpr(ex);
 			} );
 			if(i < el.length - 1) result .add( sep );
+		}
+		return result.toString();
+	}
+
+	function print_TIf_Block(econd, eif, eelse) {
+		return printIfElse(econd, eif, eelse);
+	}
+
+	function print_TIf_Ternar(econd, eif, eelse) {
+		return switch (eif.expr) {
+			case TConst(TInt(z)): '(${printExpr(econd)} and ${z} or (${printExpr(eelse)}))';
+			case TConst(TBool(z)): '(${printExpr(econd)} and ${z} or (${printExpr(eelse)}))';
+			case TConst(TFloat(z)): '(${printExpr(econd)} and ${z} or (${printExpr(eelse)}))';
+			case TConst(TString(z)): '(${printExpr(econd)} and "${z}" or (${printExpr(eelse)}))';
+			case TConst(TNull): '(_G.___ternar(${printExpr(econd)}, nil, (${printExpr(eelse)})))'; // TODO
+			default: printIfElse(econd, eif, eelse); // TODO
+		}
+	}
+
+	public function print_TBlock(el:Array<TypedExpr>) {
+		var result = new StringBuf();
+		var ret = false;
+		for(i in 0...el.length)
+		{
+			var ex = el[i];
+			result .add( switch(ex.expr)
+			{
+				case TUnop(OpIncrement, _, e):
+					var v = printExpr(e);
+					'$v = $v + 1;';
+
+				case TUnop(OpDecrement, _, e):
+					var v = printExpr(e);
+					'$v = $v - 1;';
+
+				case TIf(econd, eif, eelse): print_TIf_Block(econd, eif, eelse);
+
+				case TReturn(null):
+					ret = true;
+					"return;";
+
+				case TReturn(eo):
+					ret = true;
+					"return " + printExpr(eo) + ";";
+
+				case TConst(_), TLocal(_): continue;
+
+				case _: printExpr(ex) + "";
+			} );
+			if(i < el.length - 1) result .add( '\n$tabs' );
+			if(ret) break;
 		}
 		return result.toString();
 	}

@@ -1,0 +1,15 @@
+{
+    "folders": [{
+        "follow_symlinks": true,
+        "path": "."
+    }],
+    "settings": {
+        "detect_indentation": false,
+        "rulers": [
+            85
+        ],
+        "trim_trailing_white_space_on_save": true,
+        "translate_tabs_to_spaces": false,
+        "tab_size": 4
+    }
+}
