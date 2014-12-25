@@ -159,6 +159,8 @@ and use **NLuaUnity** and **HUGS** lib
 
 https://github.com/Mervill/Unity3D-NLua
 
+**Note**: current version not support haxe **Enum** keyword
+
 中文支持
 ====
 广州青翼工作室
