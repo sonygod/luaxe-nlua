@@ -519,6 +519,9 @@ class LuaGenerator
 
 		#end
 
+		#if unity
+			boot .add( "" + sys.io.File.getContent('$path/boot/MonoBehaviour.lua') );
+		#end
 		var r;
 
 		r = ~/\n[ \t]{0,}--[^\n]+/g;
