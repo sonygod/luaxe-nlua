@@ -1,4 +1,4 @@
-LuaXe for unity
+LuaXe
 =====
 
 ![lua](https://cloud.githubusercontent.com/assets/3642643/5304500/5051797e-7c04-11e4-9c33-9c7290194a04.png)
@@ -144,19 +144,3 @@ Links
 https://github.com/frabbit/hx2python
 <br>https://bitbucket.org/AndrewVernon/hx2dart
 <br>http://api.haxe.org/
-
---------------------------------------------------------------
-
-unity usage
-====
-
--lib luaxe
--lib HUGS
--dce full
--D unity
-
-and use **NLuaUnity** and **HUGS** lib
-
-https://github.com/Mervill/Unity3D-NLua
-
-
