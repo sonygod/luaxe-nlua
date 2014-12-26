@@ -9,6 +9,7 @@ import unityengine.Debug;
 class Test2 extends Test1 
 {
 
+	public var aa:Int = 1;
 	public function new() 
 	{
 		super();

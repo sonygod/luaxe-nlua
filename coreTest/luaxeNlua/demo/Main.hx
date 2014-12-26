@@ -1,28 +1,52 @@
 package ;
 
 import luaxe.Lua;
-
 import unityengine.*;
-// Use readme
-//@:require("hello", "world")
-class Main
+using Reflect;
+class Main 
 {
-	@:keep	public static function Awake() {
-		trace("unity Awake.............................");
+	public static var mMain:Main;
+	
+	public var cube:GameObject;
+	
+	public var no:Int;
+	
+	public var speed:Int = 5;
+	public function new() {
+		
+	untyped __call__(SetMain, this);
+	}
+	@:keep	  function Awake() {
+			
+		trace("unity Awake............................."+cube.name);
 	}
 	
-@:keep	public static function Start() {
+    @:keep	public  function Start() {
 		trace("unity start.............................");
 	}
 	
-@:keep	public static function Update() {
+    @:keep	public  function Update() {
+	
+	if(cube!=null)
+	cube.transform.RotateAround(cube.transform.position, Vector3.up, speed * Time.deltaTime);
+	
+	cube.transform.
+	
+	if (Input.GetKey(KeyCode.W) ){
+		
+		speed += 1;
+	}
+	
+	if (Input.GetKey(KeyCode.S)) {
+		
+		speed -= 1;
+	}
 	
 	}
 public static function main()
 	{
-	
-     
 		
+	mMain =	new Main();
 	
 	}
 }

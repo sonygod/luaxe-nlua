@@ -72,7 +72,7 @@ class Type {
 	}
 
 	public static function enumEq<T:EnumValue>( a : T, b : T ) : Bool {
-		return null;
+		return false;
 	}
 
 	public inline static function enumIndex( e : EnumValue ) : Int {

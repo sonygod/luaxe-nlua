@@ -520,6 +520,8 @@ class LuaGenerator
 		#end
 
 		#if unity
+		  //   boot .add( "\n" + sys.io.File.getContent('$path/boot/object.lua') );
+		   // boot .add( "" + sys.io.File.getContent('$path/boot/boot.lua') );
 			boot .add( "" + sys.io.File.getContent('$path/boot/MonoBehaviour.lua') );
 		#end
 		var r;
