@@ -96,7 +96,7 @@ Main.hx
     	}
     	
     	
-    	 @:keep	public  function handleClick(control:Dynamic, mouseevent:Dynamic) {
+    	 @:keep	public static function handleClick(control:Dynamic, mouseevent:Dynamic) {
     		 
     		 
     		 trace(control.name);
@@ -309,7 +309,7 @@ and the Main.lua
     		end
     	end
     	
-    	function Main_Main:handleClick(control, mouseevent)
+    	function Main_Main.handleClick(control, mouseevent)
     		Debug.Log(control.name)
     	end
     	
