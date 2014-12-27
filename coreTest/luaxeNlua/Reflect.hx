@@ -52,7 +52,7 @@ class Reflect {
 	(As3) If used on a property field, the setter will be invoked. It is
 	not possible to set the value directly.
 	**/
-	public static function setField( o : Dynamic, field : String, value : Dynamic ) : Void return ;
+	@:keep	public static function setField( o : Dynamic, field : String, value : Dynamic ) : Void return ;
 	/**
 	Returns the value of the field named `field` on object `o`, taking
 	property getter functions into account.
