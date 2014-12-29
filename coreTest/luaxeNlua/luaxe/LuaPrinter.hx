@@ -255,7 +255,7 @@ class LuaPrinter {
 
 			case FStatic(_,cf): "." + cf.get().name;
 			case FAnon(cf): "." + cf.get().name;
-			case FDynamic(s): "." + s;
+			case FDynamic(s): s.indexOf("Function") != -1?":" + s:"." + s+"";
 			case FClosure(_,cf): closure = true; "." + cf.get().name;
 			case FEnum(_,ef): "." + ef.name;
 		}

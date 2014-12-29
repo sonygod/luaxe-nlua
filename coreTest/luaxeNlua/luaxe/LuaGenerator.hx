@@ -76,6 +76,8 @@ class LuaGenerator
 		var expr:haxe.macro.TypedExpr = e;
 		var exprString = LP.printExpr(expr);
 		//print(exprString.replace("super(", "super.init("));
+		
+		
 		print(exprString);
 	
 	}
@@ -184,6 +186,8 @@ class LuaGenerator
 		var stat = classCount > 1 ? 'static' : "";
 
 		var field = field(f.name);
+		
+		
 		var e = f.expr();
 		if(e == null)
 		{
@@ -280,8 +284,9 @@ class LuaGenerator
 		{
 			var psup:String = null;
 			LuaPrinter.superClass = null;
-			if(c.superClass != null)
+			if(c.superClass != null&&!c.meta.has(":noExtends"))
 			{
+				
 				psup = getPath(c.superClass.t.get());
 				#if verbose print('-- class $p extends $psup'); #end
 				LuaPrinter.superClass = psup;
@@ -398,7 +403,7 @@ class LuaGenerator
 			'\n\tparams = params'+
 			'\n},Enum) end');
 		newline();
-		#if verbose print('--$p(t, i, [p]):super(t, i, p);'); #end
+		#if verbose print('--$p(t, i, [p])(t, i, p);'); #end
 		newline();
 		for(c in e.constructs.keys())
 		{

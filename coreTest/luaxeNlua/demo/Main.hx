@@ -1,83 +1,56 @@
 package ;
-
-
-
-
 import luaxe.Lua;
 import unityengine.*;
+import unityHelper.LuaMonoBehaviour;
 using Reflect;
+using unityHelper.TypeCheck;
 
-
+@:noExtends
 class Main 
 {
 	public static var mMain:Main;
+
 	
-	public var cube:GameObject;
-	
-	public var no:Int;
-	
-	public var speed:Int = 5;
-	
-	public var MButton:Dynamic;
+	public var current:LuaMonoBehaviour;
 	public function new() {
-		
+	
 	untyped __call__(SetMain, this);
 	}
 	@:keep	  function Awake() {
-			
-		trace("unity Awake............................." );
 		
+		
+	 
+	  
+	 current.callLua(delay);
+	  
+	 current.SetTimeout(delay, 2);
 
-	var v1 = new Vector3(1, 1, 1);
-	var v2 = new Vector3(1, 1, 1);
-	v1.x = 100;
-	Debug.Log(v1.x + "---- " + v2.x);
-	 //untyped =button1.MouseUp:Add(handleClick)
-	 
-	
-	 if(MButton!=null){
-	 untyped __lua__("self.MButton.Click:Add(self.handleClick)");
-	 }else {
-		 trace("MButton was not defined");
-	 }
-	 
-	
-	 var aa = new Array<Int>();
-	 
-	 for (i in 0...10) {
-		 
-		 aa.push(i);
-	 }
-	 
-	 for (i in aa) {
-		  trace("数组【1】="+aa[i]);
-	 }
-	 
-	
-	 
-	}
-	
-	
-	 @:keep	public  function handleClick(control:Dynamic, mouseevent:Dynamic) {
-		 
-		 
-		 trace(control.name);
-	 }
-	
-	 @:keep	public  function OnDestroy() {
+	 current.LuaDestoryFunction();
+	   
+	 current.StopLuaCoroutine();
+	 current.StopAllCoroutines();
 		
-		 trace("OnDestory");
-	 }
-	
-    @:keep	public  function Start() {
-		trace("unity start.............................");
+	 current.UnityCoroutine(new WaitForSeconds(2), delay);
 	}
 	
-    @:keep	public  function Update() {
-	
-	
-	
+	@:keep	  function Start() {
+
 	}
+	
+	@:keep	  function Update() {
+
+	}
+	@:keep public 	function delay() {
+		trace("delay " );
+		
+	}
+	@:keep public 	function delay2():Void {
+		trace("delay " );
+			
+		
+	}
+
+	
 public static function main()
 	{
 		
