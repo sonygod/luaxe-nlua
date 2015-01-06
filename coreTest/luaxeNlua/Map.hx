@@ -33,12 +33,12 @@ interface IMap<K, V>
 
 abstract Map<K,V>(IMap<K,V>) {
 
+	
 	public function new() untyped this = {};
 
 	public inline function set(key:K, value:V):V {
-		var v = value;
-		untyped this[key] = v;
-		return v;
+		
+		  return null;
 	}
 
 	public inline function get(key:K):V return untyped this[key];
@@ -47,21 +47,19 @@ abstract Map<K,V>(IMap<K,V>) {
 
 	@:arrayAccess @:noCompletion public inline function _set(k:K, value:V):V {
 		var v = value;
-		untyped this[k] = v;
+	
 		return v;
 	}
 
 	public inline function exists(key:K):Bool return untyped this[key] != null;
 
 	public function remove(key:Dynamic):Bool {
-		var _has:Bool = exists(key);
-		untyped this[key] = null;
-		return _has;
+		return false;
 	}
 
 	public function keys():Iterator<K> {
 		var l = 0;
-		var a = untyped ___lua___("{}");
+		var a = untyped ("{}");
 		var t:Dynamic = this;
 
 		untyped __lua__('for k,v in pairs(t) do
@@ -71,7 +69,7 @@ abstract Map<K,V>(IMap<K,V>) {
 
 		var i = 0;
 
-		var ret:Dynamic = untyped ___lua___("{}");
+		var ret:Dynamic = untyped ("{}");
 		ret.next = function():K {
 			i = i + 1;
 			return a[i - 1];
@@ -85,7 +83,7 @@ abstract Map<K,V>(IMap<K,V>) {
 
 	public function iterator():Iterator<V> {
 		var l = 0;
-		var a = untyped ___lua___("{}");
+		var a = untyped ("{}");
 		var t:Dynamic = this;
 
 		untyped __lua__('for k,v in pairs(t) do
@@ -95,7 +93,7 @@ abstract Map<K,V>(IMap<K,V>) {
 
 		var i = 0;
 
-		var ret:Dynamic = untyped ___lua___("{}");
+		var ret:Dynamic = untyped ("{}");
 		ret.next = function():K {
 			i = i + 1;
 			return a[i - 1];

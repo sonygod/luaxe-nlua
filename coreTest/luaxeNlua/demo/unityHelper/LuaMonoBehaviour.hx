@@ -16,5 +16,6 @@ extern class   LuaMonoBehaviour extends MonoBehaviour
 	public function LuaDestoryFunction():Void;
 	public function callLua(func:Dynamic):Void;
 	public function UnityCoroutine(ins:YieldInstruction , func:Dynamic ):Void;
+	public function Test(target:GameObject):Void;
 	
 }
