@@ -21,50 +21,50 @@ Main_Main.__index = Main_Main;
 	end
 	
 	function Main_Main:Awake()
-		_G.print("Main.hx:28: " + ("中文支持"))
-		local a = unityHelper_Luanet_luanet.ctype(unityengine_Transform_Transform)
-		unityHelper_TypeCheck_TypeCheck.getTypedComponent(self.current, unityengine_Transform_Transform).localPosition = Vector3(10, 10, 0)
-		local list = unityHelper_TypeCheck_TypeCheck.getComponentsInChildrenOfType(self.current, unityengine_Transform_Transform)
+		Debug.Log("中文支持")
+		local a = luanet.ctype(Transform)
+		unityHelper_TypeCheck_TypeCheck.getTypedComponent(self.current, Transform).localPosition = Vector3(10, 10, 0)
+		local list = unityHelper_TypeCheck_TypeCheck.getComponentsInChildrenOfType(self.current, Transform)
 		oo = list:GetEnumerator()
 		while (oo:MoveNext()) do
-			_G.print("Main.hx:43: " + (oo.Current.name))
+			Debug.Log(oo.Current.name)
 		end
 		local aa = newList(self.current.gameObject)
-		_G.print("Main.hx:51: " + (self.current.gameObject))
+		Debug.Log(self.current.gameObject)
 		aa:Add(self.current.gameObject)
-		_G.print("Main.hx:54: " + (aa:get_Count()))
+		Debug.Log(aa:get_Count())
 		local bb = newList(1)
 		bb:Add(2)
-		_G.print("Main.hx:60: " + ("init--" + Std_Std.string(unityengine_Time_Time.time)))
+		Debug.Log("init--" + Std_Std.string(Time.time))
 		local _g = 0
 		while (_g < 1000) do
 			local i = _g; _g = _g + 1
 			bb:Add(i)
 		end
-		_G.print("Main.hx:65: " + (bb:First()))
+		Debug.Log(bb:First())
 		bb:Dequeue()
-		_G.print("Main.hx:69: " + (bb:First()))
-		_G.print("Main.hx:71: " + (bb:Last()))
+		Debug.Log(bb:First())
+		Debug.Log(bb:Last())
 		bb:Pop()
-		_G.print("Main.hx:75: " + (bb:Last()))
-		_G.print("Main.hx:77: " + ("before" + Std_Std.string(unityengine_Time_Time.time)))
-		self.current:UnityCoroutine(unityengine_WaitForSeconds_WaitForSeconds(2), ___bind(self, self.delay))
+		Debug.Log(bb:Last())
+		Debug.Log("before" + Std_Std.string(Time.time))
+		self.current:UnityCoroutine(WaitForSeconds(2), ___bind(self, self.delay))
 	end
 	
 	function Main_Main:delay()
-		_G.print("Main.hx:83: " + ("delay" + Std_Std.string(unityengine_Time_Time.time)))
+		Debug.Log("delay" + Std_Std.string(Time.time))
 	end
 	
 	function Main_Main:Start()
-		_G.print("Main.hx:88: " + ("finish--" + Std_Std.string(unityengine_Time_Time.time)))
-		_G.print("Main.hx:89: " + ("删除开始"))
+		Debug.Log("finish--" + Std_Std.string(Time.time))
+		Debug.Log("删除开始")
 		self.current:Test(self.current.gameObject)
 	end
 	
 	function Main_Main:Update() end
 	
 	function Main_Main:OnDestroy()
-		_G.print("Main.hx:114: " + ("lua 删除"))
+		Debug.Log("lua 删除")
 	end
 	
 	
@@ -84,10 +84,10 @@ ___inherit(unityHelper_TypeCheck_TypeCheck, Object);
 unityHelper_TypeCheck_TypeCheck.__name__ = "unityHelper.TypeCheck_TypeCheck";
 unityHelper_TypeCheck_TypeCheck.__index = unityHelper_TypeCheck_TypeCheck;
 	function unityHelper_TypeCheck_TypeCheck.getTypedComponent(c, type)
-		return c:GetComponent(unityHelper_Luanet_luanet.ctype(type));
+		return c:GetComponent(luanet.ctype(type));
 	end
 	function unityHelper_TypeCheck_TypeCheck.getComponentsInChildrenOfType(c, type)
-		return c:GetComponentsInChildren(unityHelper_Luanet_luanet.ctype(type));
+		return c:GetComponentsInChildren(luanet.ctype(type));
 	end
 	
 unityHelper_TypeCheck_TypeCheck.__props__ = {};
